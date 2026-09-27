@@ -5,3 +5,4 @@
 [resource]
 script = ExtResource("1")
 start_speed = 140.0
+ground_y = 233.0
