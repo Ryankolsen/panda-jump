@@ -74,11 +74,17 @@ static func off_screen_spawn_x(viewport_width: float) -> float:
 func _spawn_if_due() -> void:
 	var viewport_width: float = get_viewport_rect().size.x
 	while pace.distance + viewport_width + SPAWN_LOOKAHEAD >= _next_spawn_at:
+		var spawn_x := _next_spawn_at
+		var result: Dictionary = _spawner.next(pace.speed)
+		_next_spawn_at += result.offset
+		if result.kind != Spawner.Kind.BARREL:
+			# Bamboo kinds have no scene yet (see #12); skip placing one but
+			# still consume its offset above so barrel spacing is unchanged.
+			continue
 		var barrel: Barrel = BARREL_SCENE.instantiate()
-		barrel.position = Vector2(_next_spawn_at, tuning.ground_y - Barrel.PICTURE_RADIUS)
+		barrel.position = Vector2(spawn_x, tuning.ground_y - Barrel.PICTURE_RADIUS)
 		barrel.hit_panda.connect(_on_barrel_hit_panda)
 		world.add_child(barrel)
-		_next_spawn_at += _spawner.next(pace.speed).offset
 
 
 func _on_barrel_hit_panda(_body: Node2D) -> void:

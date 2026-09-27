@@ -45,3 +45,14 @@ extends Resource
 ## Score points earned per pixel traveled. 0.1 is 1 point per 10px, about
 ## 14 points a second at the starting speed. See issue #9.
 @export var points_per_pixel: float = 0.1
+
+## Chance that a given barrel gap gets a bamboo mixed into it. See #11.
+@export var bamboo_chance: float = 0.4
+
+## Given a gap has bamboo, the chance it floats at jump height rather than
+## sitting on the ground. See issue #11.
+@export var bamboo_float_chance: float = 0.5
+
+## Seconds of travel a ground bamboo must clear from each neighbouring
+## barrel, so grabbing it never forces the panda into one. See issue #11.
+@export var bamboo_clearance_time: float = 0.5
