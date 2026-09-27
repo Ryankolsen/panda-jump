@@ -3,14 +3,22 @@ extends Node2D
 
 ## Root of the game. Owns the run's Pace (built from an exported Tuning
 ## resource) and drives it every physics frame, then hands the resulting
-## distance to World (so later barrels/bamboo scroll for free) and to the
+## distance to World (so barrels/bamboo scroll for free) and to the
 ## background. Ground is a StaticBody2D whose top surface sits at
 ## Tuning.ground_y so the panda's feet rest on the painted path; Panda is
-## fixed on screen and handles its own gravity and jump.
+## fixed on screen and handles its own gravity and jump. Also owns a
+## Spawner (seeded from randi() so runs vary) and rolls in barrels as
+## children of World, placed at their spawn distance so Pace's scroll
+## carries them for free — see issue #7.
+
+const BARREL_SCENE: PackedScene = preload("res://scenes/hazards/barrel.tscn")
+const SPAWN_LOOKAHEAD := 64.0
 
 @export var tuning: Tuning
 
 var pace: Pace
+var _spawner: Spawner
+var _next_spawn_at: float = 0.0
 
 @onready var world: Node2D = $World
 @onready var background: ForestBackground = $Background
@@ -24,8 +32,35 @@ func _ready() -> void:
 	var half_height: float = ground_shape.shape.size.y / 2.0
 	ground_shape.position.y = tuning.ground_y + half_height
 
+	var rng := RandomNumberGenerator.new()
+	rng.seed = randi()
+	_spawner = Spawner.new(tuning, rng)
+	# The first barrel gets no "previous spawn" to gap from, so start it at
+	# the same just-off-the-right-edge distance every later barrel arrives
+	# at via the lookahead below, rather than the raw first gap (which can
+	# land on screen, even on top of the panda).
+	_next_spawn_at = Main.off_screen_spawn_x(get_viewport_rect().size.x)
+
 
 func _physics_process(delta: float) -> void:
 	pace.tick(delta)
 	world.position.x = -pace.distance
 	background.set_distance(pace.distance)
+	_spawn_if_due()
+
+
+## The distance at which a spawn is just barely off the right edge of a
+## `viewport_width`-wide viewport — the same threshold `_spawn_if_due` uses
+## for every later barrel via its lookahead check. Static and pure so it's
+## testable without a scene tree.
+static func off_screen_spawn_x(viewport_width: float) -> float:
+	return viewport_width + SPAWN_LOOKAHEAD
+
+
+func _spawn_if_due() -> void:
+	var viewport_width: float = get_viewport_rect().size.x
+	while pace.distance + viewport_width + SPAWN_LOOKAHEAD >= _next_spawn_at:
+		var barrel: Node2D = BARREL_SCENE.instantiate()
+		barrel.position = Vector2(_next_spawn_at, tuning.ground_y - Barrel.PICTURE_RADIUS)
+		world.add_child(barrel)
+		_next_spawn_at += _spawner.next(pace.speed).offset

@@ -29,3 +29,11 @@ extends Resource
 
 ## Seconds of invincibility after a hit lands, before another can. See #6.
 @export var invincible_time: float = 1.0
+
+## Extra seconds added to a barrel's gap beyond bare jump-clearance, so the
+## panda has time to land and react before the next one. See issue #7.
+@export var barrel_landing_time: float = 0.45
+
+## Extra random distance (0..this, in pixels) added on top of the fair
+## minimum gap between barrels, so gaps aren't all identical. See #7.
+@export var barrel_gap_extra: float = 220.0
