@@ -9,7 +9,9 @@ func test_speed_comes_from_tuning_before_any_tick():
 
 
 func test_tick_accumulates_distance_over_multiple_calls():
-	var pace := Pace.new(Tuning.new())
+	var tuning := Tuning.new()
+	tuning.speed_ramp = 0.0
+	var pace := Pace.new(tuning)
 	pace.tick(0.5)
 	pace.tick(0.25)
 	assert_almost_eq(pace.distance, 140.0 * 0.75, 0.001, "distance is speed * elapsed time across ticks")
@@ -44,6 +46,39 @@ func test_score_after_one_second_at_140_px_per_second_is_14():
 func test_score_rounds_down():
 	var tuning := Tuning.new()
 	tuning.start_speed = 19.9
+	tuning.speed_ramp = 0.0
 	var pace := Pace.new(tuning)
 	pace.tick(1.0)
 	assert_eq(pace.score, 1, "19.9 * 0.1 = 1.99, which floors to 1")
+
+
+# Issue #13: speed ramps up over time toward a cap, so gaps widen with it.
+
+func test_speed_ramps_up_after_ten_seconds():
+	var pace := Pace.new(Tuning.new())
+	pace.tick(10.0)
+	assert_almost_eq(pace.speed, 180.0, 0.01, "140 + 4 * 10 = 180")
+
+
+func test_speed_caps_at_max_speed_and_stays_there():
+	var pace := Pace.new(Tuning.new())
+	pace.tick(40.0)
+	assert_almost_eq(pace.speed, 300.0, 0.01, "speed reaches the 300 px/s cap after 40s")
+	pace.tick(100.0)
+	assert_almost_eq(pace.speed, 300.0, 0.01, "speed never exceeds the cap")
+
+
+func test_distance_grows_faster_than_starting_speed_alone():
+	var pace := Pace.new(Tuning.new())
+	for i in range(20):
+		pace.tick(1.0)
+	assert_gt(pace.distance, 140.0 * 20, "ramping speed covers more distance than a flat 140 px/s would")
+
+
+func test_max_speed_below_start_speed_clamps_from_the_start():
+	var tuning := Tuning.new()
+	tuning.max_speed = 100.0
+	var pace := Pace.new(tuning)
+	assert_almost_eq(pace.speed, 100.0, 0.01, "the clamp always wins, even before any tick")
+	pace.tick(5.0)
+	assert_almost_eq(pace.speed, 100.0, 0.01, "the clamp still wins after ticking")

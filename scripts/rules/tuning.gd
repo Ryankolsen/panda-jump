@@ -8,6 +8,14 @@ extends Resource
 ## Starting forward speed of the run, in pixels per second.
 @export var start_speed: float = 140.0
 
+## How fast forward speed ramps up, in px/s of speed gained per second
+## elapsed. See issue #13.
+@export var speed_ramp: float = 4.0
+
+## The speed the ramp never exceeds, in pixels per second. At speed_ramp's
+## default this is reached 40s in. See issue #13.
+@export var max_speed: float = 300.0
+
 ## Y coordinate of the painted dirt path in the 480x270 viewport, in pixels.
 ## Checked against a headless screenshot of the background — see issue #4.
 @export var ground_y: float = 233.0

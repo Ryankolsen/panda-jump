@@ -180,3 +180,10 @@ func test_same_seed_produces_the_same_mixed_sequence():
 func test_ground_bamboo_keeps_clearance_at_a_higher_speed():
 	var results := _run(1, 300.0, 1000)
 	_assert_ground_bamboo_keeps_clearance(results, 300.0)
+
+
+# Issue #13: gaps widen with speed so a barrel stays jumpable as pace ramps up.
+
+func test_min_barrel_gap_widens_with_speed():
+	var spawner := _spawner(1)
+	assert_gt(spawner.min_barrel_gap(300.0), spawner.min_barrel_gap(140.0), "min gap grows with speed")
