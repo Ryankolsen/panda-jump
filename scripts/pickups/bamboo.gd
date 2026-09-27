@@ -1,14 +1,17 @@
 class_name Bamboo
 extends Area2D
 
-## A bamboo pickup. Placeholder art only — see issue #16 for swappable
-## drawing. Spawned as a child of World by Main so it scrolls at Pace's
-## speed with no copy of the speed of its own; this script only tracks its
-## own on-screen position to free itself once it has scrolled off the left
-## edge. The node's origin is the bottom-center of the stalk, so Main can
-## position it directly on ground_y (or bamboo_float_height above it)
-## without doing its own height math. Hitbox is roughly the size of the
-## picture — bamboo is generous, unlike barrels (see issue #7).
+## A bamboo pickup. Spawned as a child of World by Main so it scrolls at
+## Pace's speed with no copy of the speed of its own; this script only
+## tracks its own on-screen position to free itself once it has scrolled
+## off the left edge. The node's origin is the bottom-center of the stalk,
+## so Main can position it directly on ground_y (or bamboo_float_height
+## above it) without doing its own height math. Hitbox is roughly the size
+## of the picture — bamboo is generous, unlike barrels (see issue #7).
+##
+## When `texture` is set (see issue #16), it's drawn scaled to HEIGHT tall
+## via SpriteFit, bottom-aligned to this node's origin, instead of the
+## placeholder shape; the hitbox doesn't change either way.
 
 const WIDTH := 10.0
 const HEIGHT := 28.0
@@ -18,6 +21,8 @@ const BAND_COLOR := Color("2E7D32")
 const LEAF_COLOR := Color("4CAF50")
 
 signal eaten
+
+@export var texture: Texture2D
 
 
 func _ready() -> void:
@@ -30,6 +35,12 @@ func _process(_delta: float) -> void:
 
 
 func _draw() -> void:
+	if texture:
+		var scale := SpriteFit.scale_for(texture.get_size(), HEIGHT)
+		var size := texture.get_size() * scale
+		draw_texture_rect(texture, Rect2(Vector2(-size.x / 2.0, -size.y), size), false)
+		return
+
 	var stalk_rect := Rect2(Vector2(-WIDTH / 2.0, -HEIGHT), Vector2(WIDTH, HEIGHT))
 	draw_rect(stalk_rect, STALK_COLOR)
 

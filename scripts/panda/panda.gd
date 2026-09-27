@@ -72,13 +72,12 @@ func _update_look() -> void:
 		sprite.modulate = NORMAL_MODULATE
 
 
-## Scales the sprite to Tuning.panda_height and keeps it bottom-aligned to
-## this node's origin (the panda's feet, at ground level) regardless of the
-## source picture's resolution.
+## Scales the sprite to Tuning.panda_height via SpriteFit and keeps it
+## bottom-aligned to this node's origin (the panda's feet, at ground level)
+## regardless of the source picture's resolution.
 func _scale_sprite_to_panda_height() -> void:
 	var texture := sprite.texture
 	if not texture or texture.get_height() <= 0:
 		return
-	var s := tuning.panda_height / texture.get_height()
-	sprite.scale = Vector2(s, s)
+	sprite.scale = SpriteFit.scale_for(texture.get_size(), tuning.panda_height)
 	sprite.position.y = -tuning.panda_height / 2.0
