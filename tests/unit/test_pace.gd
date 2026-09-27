@@ -26,3 +26,24 @@ func test_tick_with_zero_delta_leaves_distance_unchanged():
 	var pace := Pace.new(Tuning.new())
 	pace.tick(0.0)
 	assert_eq(pace.distance, 0.0, "a zero-delta tick advances nothing")
+
+
+# Issue #9: score is a computed property from distance, not stored state.
+
+func test_new_pace_has_zero_score():
+	var pace := Pace.new(Tuning.new())
+	assert_eq(pace.score, 0, "a new Pace has not moved, so score is 0")
+
+
+func test_score_after_one_second_at_140_px_per_second_is_14():
+	var pace := Pace.new(Tuning.new())
+	pace.tick(1.0)
+	assert_eq(pace.score, 14, "140 px/s for 1s is 140px, 0.1 points/px is 14 points")
+
+
+func test_score_rounds_down():
+	var tuning := Tuning.new()
+	tuning.start_speed = 19.9
+	var pace := Pace.new(tuning)
+	pace.tick(1.0)
+	assert_eq(pace.score, 1, "19.9 * 0.1 = 1.99, which floors to 1")

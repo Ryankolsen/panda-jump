@@ -27,6 +27,8 @@ var _next_spawn_at: float = 0.0
 @onready var ground_shape: CollisionShape2D = $Ground/CollisionShape2D
 @onready var panda: Panda = $Panda
 
+var _hud: Hud
+
 
 func _ready() -> void:
 	pace = Pace.new(tuning)
@@ -38,9 +40,9 @@ func _ready() -> void:
 	health = Health.new(tuning)
 	panda.health = health
 
-	var hud: Hud = HUD_SCENE.instantiate()
-	add_child(hud)
-	hud.setup(health)
+	_hud = HUD_SCENE.instantiate()
+	add_child(_hud)
+	_hud.setup(health)
 
 	var rng := RandomNumberGenerator.new()
 	rng.seed = randi()
@@ -55,6 +57,7 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	pace.tick(delta)
 	health.tick(delta)
+	_hud.set_score(pace.score)
 	world.position.x = -pace.distance
 	background.set_distance(pace.distance)
 	_spawn_if_due()

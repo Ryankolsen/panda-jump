@@ -41,3 +41,7 @@ extends Resource
 ## Seconds between visibility toggles while the panda is invincible after a
 ## hit, so it blinks rather than just staying tinted. See issue #8.
 @export var blink_interval: float = 0.1
+
+## Score points earned per pixel traveled. 0.1 is 1 point per 10px, about
+## 14 points a second at the starting speed. See issue #9.
+@export var points_per_pixel: float = 0.1

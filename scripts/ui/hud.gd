@@ -16,6 +16,7 @@ var _hearts: int
 var _max_hearts: int
 
 @onready var _hearts_control: Control = $Hearts
+@onready var _score_label: Label = $ScoreLabel
 
 
 func _ready() -> void:
@@ -27,6 +28,19 @@ func setup(health: Health) -> void:
 	_hearts = health.hearts
 	health.changed.connect(_on_health_changed)
 	_hearts_control.queue_redraw()
+	set_score(0)
+
+
+## Updates the top-right score label from the current score. Main calls
+## this every frame with `pace.score`.
+func set_score(score: int) -> void:
+	_score_label.text = Hud.score_text(score)
+
+
+## The exact text shown in the score label — a static, pure rule kept out
+## of the drawing code so it's testable without a scene tree.
+static func score_text(score: int) -> String:
+	return "Score: %d" % score
 
 
 ## Returns, left to right, whether each of `max_hearts` heart slots is full
