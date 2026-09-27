@@ -6,3 +6,6 @@
 script = ExtResource("1")
 start_speed = 140.0
 ground_y = 233.0
+panda_height = 64.0
+gravity = 1400.0
+jump_velocity = 520.0

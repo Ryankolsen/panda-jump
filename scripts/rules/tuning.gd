@@ -11,3 +11,15 @@ extends Resource
 ## Y coordinate of the painted dirt path in the 480x270 viewport, in pixels.
 ## Checked against a headless screenshot of the background — see issue #4.
 @export var ground_y: float = 233.0
+
+## Display height of the panda sprite, in pixels. The picture is scaled to
+## this height regardless of its source resolution.
+@export var panda_height: float = 64.0
+
+## Downward acceleration applied to the panda every physics frame, in
+## pixels per second squared.
+@export var gravity: float = 1400.0
+
+## Upward speed applied on takeoff, in pixels per second. With `gravity`
+## above this gives an ~96px high, ~0.74s jump.
+@export var jump_velocity: float = 520.0
