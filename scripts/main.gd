@@ -12,6 +12,7 @@ extends Node2D
 ## carries them for free — see issue #7.
 
 const BARREL_SCENE: PackedScene = preload("res://scenes/hazards/barrel.tscn")
+const BAMBOO_SCENE: PackedScene = preload("res://scenes/pickups/bamboo.tscn")
 const HUD_SCENE: PackedScene = preload("res://scenes/ui/hud.tscn")
 const GAME_OVER_SCENE: PackedScene = preload("res://scenes/ui/game_over.tscn")
 const SPAWN_LOOKAHEAD := 64.0
@@ -83,14 +84,29 @@ func _spawn_if_due() -> void:
 		var spawn_x := _next_spawn_at
 		var result: Dictionary = _spawner.next(pace.speed)
 		_next_spawn_at += result.offset
-		if result.kind != Spawner.Kind.BARREL:
-			# Bamboo kinds have no scene yet (see #12); skip placing one but
-			# still consume its offset above so barrel spacing is unchanged.
-			continue
-		var barrel: Barrel = BARREL_SCENE.instantiate()
-		barrel.position = Vector2(spawn_x, tuning.ground_y - Barrel.PICTURE_RADIUS)
-		barrel.hit_panda.connect(_on_barrel_hit_panda)
-		world.add_child(barrel)
+		match result.kind:
+			Spawner.Kind.BARREL:
+				var barrel: Barrel = BARREL_SCENE.instantiate()
+				barrel.position = Vector2(spawn_x, tuning.ground_y - Barrel.PICTURE_RADIUS)
+				barrel.hit_panda.connect(_on_barrel_hit_panda)
+				world.add_child(barrel)
+			Spawner.Kind.BAMBOO_GROUND:
+				_spawn_bamboo(spawn_x, tuning.ground_y)
+			Spawner.Kind.BAMBOO_FLOAT:
+				_spawn_bamboo(spawn_x, tuning.ground_y - tuning.bamboo_float_height)
+
+
+## Instances bamboo at spawn_x with its bottom (the node's origin) at
+## bottom_y, and connects eaten to healing so touching it restores a heart.
+func _spawn_bamboo(spawn_x: float, bottom_y: float) -> void:
+	var bamboo: Bamboo = BAMBOO_SCENE.instantiate()
+	bamboo.position = Vector2(spawn_x, bottom_y)
+	bamboo.eaten.connect(_on_bamboo_eaten)
+	world.add_child(bamboo)
+
+
+func _on_bamboo_eaten() -> void:
+	health.heal()
 
 
 func _on_barrel_hit_panda(_body: Node2D) -> void:

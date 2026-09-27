@@ -61,3 +61,15 @@ extends Resource
 ## ignored, so a tap already in progress when the last heart goes doesn't
 ## immediately restart the run. See issue #10.
 @export var game_over_input_delay: float = 0.5
+
+## Height, in pixels, above ground_y that a floating bamboo's bottom sits.
+## Kept at least 12px below jump_apex() so it stays reachable by a normal
+## jump. See issue #12.
+@export var bamboo_float_height: float = 70.0
+
+
+## The highest point above its start a jump reaches: jump_velocity squared
+## over twice gravity. Follows this tuning's own values, not a constant, so
+## edits to jump_velocity or gravity keep bamboo placement honest.
+func jump_apex() -> float:
+	return jump_velocity * jump_velocity / (2.0 * gravity)
