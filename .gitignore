@@ -1,0 +1,20 @@
+# Godot cache and per-machine state (includes export_credentials.cfg,
+# where keystore passwords live — this repo is public)
+.godot/
+export_credentials.cfg
+
+# Build output
+build/
+*.apk
+*.aab
+*.pck
+
+# IDE and OS
+.idea/
+.vscode/
+.DS_Store
+
+# Python (tools/cutout.py)
+__pycache__/
+.venv/
+venv/
