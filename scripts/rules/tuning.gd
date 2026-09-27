@@ -76,6 +76,11 @@ extends Resource
 @export var bamboo_float_height: float = 70.0
 
 
+## Seconds each running pose (RUN_1/RUN_2) is shown before alternating to
+## the other one. See issue #15.
+@export var run_frame_time: float = 0.15
+
+
 ## The highest point above its start a jump reaches: jump_velocity squared
 ## over twice gravity. Follows this tuning's own values, not a constant, so
 ## edits to jump_velocity or gravity keep bamboo placement honest.

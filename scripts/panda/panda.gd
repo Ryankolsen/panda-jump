@@ -15,6 +15,7 @@ const NORMAL_MODULATE := Color(1, 1, 1)
 @export var skin: PandaSkin
 
 var health: Health
+var run_time: float = 0.0
 
 @onready var sprite: Sprite2D = $Sprite2D
 
@@ -23,9 +24,7 @@ func _ready() -> void:
 	position.x = FIXED_X
 	if tuning:
 		position.y = tuning.ground_y
-	if skin and sprite:
-		sprite.texture = skin.texture_for(PandaSkin.Pose.STANDING)
-		_scale_sprite_to_panda_height()
+	_update_look()
 
 
 func _physics_process(delta: float) -> void:
@@ -35,7 +34,11 @@ func _physics_process(delta: float) -> void:
 	if is_on_floor() and Input.is_action_just_pressed("jump"):
 		velocity.y = -tuning.jump_velocity
 	move_and_slide()
-	_update_hurt_look()
+	if is_on_floor():
+		run_time += delta
+	else:
+		run_time = 0.0
+	_update_look()
 
 
 ## Whether the sprite should be visible right now, given `time_left` seconds
@@ -47,20 +50,26 @@ static func blink_visible(time_left: float, interval: float) -> bool:
 	return int(time_left / interval) % 2 == 0
 
 
-func _update_hurt_look() -> void:
-	if not health or not health.is_invincible():
-		if sprite:
-			sprite.visible = true
-			sprite.modulate = NORMAL_MODULATE
-			if skin:
-				sprite.texture = skin.texture_for(PandaSkin.Pose.STANDING)
+## Picks the pose for the current physics state via PosePicker, shows its
+## texture at panda_height tall, and applies the hurt tint/blink from #8 on
+## top (still driven by Health's invincible period, independent of pose).
+func _update_look() -> void:
+	if not sprite:
 		return
 
-	if sprite:
+	var hurt := health != null and health.is_invincible()
+
+	if skin and tuning:
+		var pose := PosePicker.pick(is_on_floor(), velocity.y, hurt, run_time, tuning.run_frame_time)
+		sprite.texture = skin.texture_for(pose)
+		_scale_sprite_to_panda_height()
+
+	if hurt:
 		sprite.visible = Panda.blink_visible(health.invincible_time_left(), tuning.blink_interval)
 		sprite.modulate = HURT_MODULATE
-		if skin:
-			sprite.texture = skin.texture_for(PandaSkin.Pose.HURT)
+	else:
+		sprite.visible = true
+		sprite.modulate = NORMAL_MODULATE
 
 
 ## Scales the sprite to Tuning.panda_height and keeps it bottom-aligned to
