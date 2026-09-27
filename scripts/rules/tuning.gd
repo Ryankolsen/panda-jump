@@ -23,3 +23,9 @@ extends Resource
 ## Upward speed applied on takeoff, in pixels per second. With `gravity`
 ## above this gives an ~96px high, ~0.74s jump.
 @export var jump_velocity: float = 520.0
+
+## Hearts the panda starts (and heals back up to). See issue #6.
+@export var max_hearts: int = 3
+
+## Seconds of invincibility after a hit lands, before another can. See #6.
+@export var invincible_time: float = 1.0

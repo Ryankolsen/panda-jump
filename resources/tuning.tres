@@ -9,3 +9,5 @@ ground_y = 233.0
 panda_height = 64.0
 gravity = 1400.0
 jump_velocity = 520.0
+max_hearts = 3
+invincible_time = 1.0
