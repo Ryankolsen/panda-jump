@@ -13,6 +13,7 @@ extends Node2D
 
 const BARREL_SCENE: PackedScene = preload("res://scenes/hazards/barrel.tscn")
 const HUD_SCENE: PackedScene = preload("res://scenes/ui/hud.tscn")
+const GAME_OVER_SCENE: PackedScene = preload("res://scenes/ui/game_over.tscn")
 const SPAWN_LOOKAHEAD := 64.0
 
 @export var tuning: Tuning
@@ -28,6 +29,7 @@ var _next_spawn_at: float = 0.0
 @onready var panda: Panda = $Panda
 
 var _hud: Hud
+var _game_over: GameOver
 
 
 func _ready() -> void:
@@ -39,10 +41,14 @@ func _ready() -> void:
 
 	health = Health.new(tuning)
 	panda.health = health
+	health.died.connect(_on_health_died)
 
 	_hud = HUD_SCENE.instantiate()
 	add_child(_hud)
 	_hud.setup(health)
+
+	_game_over = GAME_OVER_SCENE.instantiate()
+	add_child(_game_over)
 
 	var rng := RandomNumberGenerator.new()
 	rng.seed = randi()
@@ -89,3 +95,13 @@ func _spawn_if_due() -> void:
 
 func _on_barrel_hit_panda(_body: Node2D) -> void:
 	health.hit()
+
+
+## Freezes the run and shows the Game Over screen with the final score. The
+## screen itself (process_mode ALWAYS) keeps running while paused so its
+## input-delay timer and restart tap still work; everything else here
+## (Main, Panda, the HUD, barrels) is left on the default PAUSABLE mode and
+## simply stops, which is what makes the freeze work.
+func _on_health_died() -> void:
+	get_tree().paused = true
+	_game_over.show_game_over(pace.score, tuning.game_over_input_delay)

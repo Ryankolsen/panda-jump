@@ -56,3 +56,8 @@ extends Resource
 ## Seconds of travel a ground bamboo must clear from each neighbouring
 ## barrel, so grabbing it never forces the panda into one. See issue #11.
 @export var bamboo_clearance_time: float = 0.5
+
+## Seconds after the Game Over screen appears during which `jump` is
+## ignored, so a tap already in progress when the last heart goes doesn't
+## immediately restart the run. See issue #10.
+@export var game_over_input_delay: float = 0.5
