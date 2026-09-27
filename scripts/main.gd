@@ -12,17 +12,20 @@ extends Node2D
 ## carries them for free — see issue #7.
 
 const BARREL_SCENE: PackedScene = preload("res://scenes/hazards/barrel.tscn")
+const HUD_SCENE: PackedScene = preload("res://scenes/ui/hud.tscn")
 const SPAWN_LOOKAHEAD := 64.0
 
 @export var tuning: Tuning
 
 var pace: Pace
+var health: Health
 var _spawner: Spawner
 var _next_spawn_at: float = 0.0
 
 @onready var world: Node2D = $World
 @onready var background: ForestBackground = $Background
 @onready var ground_shape: CollisionShape2D = $Ground/CollisionShape2D
+@onready var panda: Panda = $Panda
 
 
 func _ready() -> void:
@@ -31,6 +34,13 @@ func _ready() -> void:
 	# lands on Tuning.ground_y, whatever that value is set to.
 	var half_height: float = ground_shape.shape.size.y / 2.0
 	ground_shape.position.y = tuning.ground_y + half_height
+
+	health = Health.new(tuning)
+	panda.health = health
+
+	var hud: Hud = HUD_SCENE.instantiate()
+	add_child(hud)
+	hud.setup(health)
 
 	var rng := RandomNumberGenerator.new()
 	rng.seed = randi()
@@ -44,6 +54,7 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	pace.tick(delta)
+	health.tick(delta)
 	world.position.x = -pace.distance
 	background.set_distance(pace.distance)
 	_spawn_if_due()
@@ -60,7 +71,12 @@ static func off_screen_spawn_x(viewport_width: float) -> float:
 func _spawn_if_due() -> void:
 	var viewport_width: float = get_viewport_rect().size.x
 	while pace.distance + viewport_width + SPAWN_LOOKAHEAD >= _next_spawn_at:
-		var barrel: Node2D = BARREL_SCENE.instantiate()
+		var barrel: Barrel = BARREL_SCENE.instantiate()
 		barrel.position = Vector2(_next_spawn_at, tuning.ground_y - Barrel.PICTURE_RADIUS)
+		barrel.hit_panda.connect(_on_barrel_hit_panda)
 		world.add_child(barrel)
 		_next_spawn_at += _spawner.next(pace.speed).offset
+
+
+func _on_barrel_hit_panda(_body: Node2D) -> void:
+	health.hit()

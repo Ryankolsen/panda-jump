@@ -8,9 +8,13 @@ extends CharacterBody2D
 ## PandaSkin) so a different-looking panda can reuse this same behaviour.
 
 const FIXED_X := 96.0
+const HURT_MODULATE := Color(1, 0.6, 0.6)
+const NORMAL_MODULATE := Color(1, 1, 1)
 
 @export var tuning: Tuning
 @export var skin: PandaSkin
+
+var health: Health
 
 @onready var sprite: Sprite2D = $Sprite2D
 
@@ -31,6 +35,32 @@ func _physics_process(delta: float) -> void:
 	if is_on_floor() and Input.is_action_just_pressed("jump"):
 		velocity.y = -tuning.jump_velocity
 	move_and_slide()
+	_update_hurt_look()
+
+
+## Whether the sprite should be visible right now, given `time_left` seconds
+## remaining in the invincible period and a blink `interval`: always visible
+## once the period has ended, otherwise toggling on and off every interval.
+static func blink_visible(time_left: float, interval: float) -> bool:
+	if time_left <= 0.0:
+		return true
+	return int(time_left / interval) % 2 == 0
+
+
+func _update_hurt_look() -> void:
+	if not health or not health.is_invincible():
+		if sprite:
+			sprite.visible = true
+			sprite.modulate = NORMAL_MODULATE
+			if skin:
+				sprite.texture = skin.texture_for(PandaSkin.Pose.STANDING)
+		return
+
+	if sprite:
+		sprite.visible = Panda.blink_visible(health.invincible_time_left(), tuning.blink_interval)
+		sprite.modulate = HURT_MODULATE
+		if skin:
+			sprite.texture = skin.texture_for(PandaSkin.Pose.HURT)
 
 
 ## Scales the sprite to Tuning.panda_height and keeps it bottom-aligned to

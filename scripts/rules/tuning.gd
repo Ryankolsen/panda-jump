@@ -37,3 +37,7 @@ extends Resource
 ## Extra random distance (0..this, in pixels) added on top of the fair
 ## minimum gap between barrels, so gaps aren't all identical. See #7.
 @export var barrel_gap_extra: float = 220.0
+
+## Seconds between visibility toggles while the panda is invincible after a
+## hit, so it blinks rather than just staying tinted. See issue #8.
+@export var blink_interval: float = 0.1
