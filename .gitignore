@@ -3,8 +3,10 @@
 .godot/
 export_credentials.cfg
 
-# Build output
+# Build output (android/ is the Gradle build template — regenerate with
+# --install-android-build-template)
 build/
+/android/
 *.apk
 *.aab
 *.pck

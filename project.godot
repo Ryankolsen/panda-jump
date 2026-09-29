@@ -22,6 +22,7 @@ window/size/window_width_override=1440
 window/size/window_height_override=810
 window/stretch/mode="canvas_items"
 window/stretch/aspect="keep_height"
+window/handheld/orientation=4
 
 [editor_plugins]
 
@@ -45,3 +46,7 @@ pause={
 
 ; input_devices/pointing/emulate_mouse_from_touch is left at its Godot
 ; default (on), so a tap arrives as a left mouse click.
+
+[rendering]
+
+textures/vram_compression/import_etc2_astc=true
