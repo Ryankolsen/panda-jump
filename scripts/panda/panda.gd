@@ -17,6 +17,10 @@ const NORMAL_MODULATE := Color(1, 1, 1)
 var health: Health
 var run_time: float = 0.0
 
+# Set by a `jump` press that no GUI control (the pause button) took first,
+# and cleared every physics frame — so it behaves like just-pressed.
+var _jump_requested: bool = false
+
 @onready var sprite: Sprite2D = $Sprite2D
 
 
@@ -31,14 +35,22 @@ func _physics_process(delta: float) -> void:
 	if not tuning:
 		return
 	velocity.y += tuning.gravity * delta
-	if is_on_floor() and Input.is_action_just_pressed("jump"):
+	if is_on_floor() and _jump_requested:
 		velocity.y = -tuning.jump_velocity
+	_jump_requested = false
 	move_and_slide()
 	if is_on_floor():
 		run_time += delta
 	else:
 		run_time = 0.0
 	_update_look()
+
+
+## Jumps come through here rather than polling Input, so a tap on the pause
+## button (handled by the GUI first) doesn't also make the panda jump.
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("jump"):
+		_jump_requested = true
 
 
 ## Whether the sprite should be visible right now, given `time_left` seconds

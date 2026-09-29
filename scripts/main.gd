@@ -15,6 +15,7 @@ const BARREL_SCENE: PackedScene = preload("res://scenes/hazards/barrel.tscn")
 const BAMBOO_SCENE: PackedScene = preload("res://scenes/pickups/bamboo.tscn")
 const HUD_SCENE: PackedScene = preload("res://scenes/ui/hud.tscn")
 const GAME_OVER_SCENE: PackedScene = preload("res://scenes/ui/game_over.tscn")
+const PAUSE_MENU_SCENE: PackedScene = preload("res://scenes/ui/pause_menu.tscn")
 const SPAWN_LOOKAHEAD := 64.0
 
 @export var tuning: Tuning
@@ -31,6 +32,7 @@ var _next_spawn_at: float = 0.0
 
 var _hud: Hud
 var _game_over: GameOver
+var _pause_menu: PauseMenu
 
 
 func _ready() -> void:
@@ -47,6 +49,9 @@ func _ready() -> void:
 	_hud = HUD_SCENE.instantiate()
 	add_child(_hud)
 	_hud.setup(health)
+
+	_pause_menu = PAUSE_MENU_SCENE.instantiate()
+	add_child(_pause_menu)
 
 	_game_over = GAME_OVER_SCENE.instantiate()
 	add_child(_game_over)
@@ -117,7 +122,9 @@ func _on_barrel_hit_panda(_body: Node2D) -> void:
 ## screen itself (process_mode ALWAYS) keeps running while paused so its
 ## input-delay timer and restart tap still work; everything else here
 ## (Main, Panda, the HUD, barrels) is left on the default PAUSABLE mode and
-## simply stops, which is what makes the freeze work.
+## simply stops, which is what makes the freeze work. The pause button is
+## locked first so it can't unfreeze the tree from under Game Over.
 func _on_health_died() -> void:
+	_pause_menu.lock()
 	get_tree().paused = true
 	_game_over.show_game_over(pace.score, tuning.game_over_input_delay)
