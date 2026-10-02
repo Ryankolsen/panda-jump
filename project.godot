@@ -44,9 +44,6 @@ pause={
 ]
 }
 
-; input_devices/pointing/emulate_mouse_from_touch is left at its Godot
-; default (on), so a tap arrives as a left mouse click.
-
 [rendering]
 
 textures/vram_compression/import_etc2_astc=true
