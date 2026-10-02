@@ -48,6 +48,9 @@ func _physics_process(delta: float) -> void:
 
 ## Jumps come through here rather than polling Input, so a tap on the pause
 ## button (handled by the GUI first) doesn't also make the panda jump.
+## A screen tap reaches "jump" only as a left mouse click, via the project's
+## input_devices/pointing/emulate_mouse_from_touch (left at Godot's default,
+## on); turning that off would leave touch screens unable to jump.
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("jump"):
 		_jump_requested = true
