@@ -3,12 +3,12 @@ extends Resource
 
 ## One picture per pose, keeping the panda's look separate from its
 ## behaviour so another skin (e.g. a blue panda) can be added later without
-## touching Panda. Only `standing` is drawn so far, so texture_for falls
-## back through simpler poses until it finds a set texture.
+## touching Panda. RUN_1 is the base every other pose falls back to when its
+## own picture is missing, so texture_for always resolves to something
+## drawable once RUN_1 is set.
 
-enum Pose { STANDING, RUN_1, RUN_2, JUMP_TAKEOFF, JUMP_AIR, HURT }
+enum Pose { RUN_1, RUN_2, JUMP_TAKEOFF, JUMP_AIR, HURT }
 
-@export var standing: Texture2D
 @export var run_1: Texture2D
 @export var run_2: Texture2D
 @export var jump_takeoff: Texture2D
@@ -17,23 +17,21 @@ enum Pose { STANDING, RUN_1, RUN_2, JUMP_TAKEOFF, JUMP_AIR, HURT }
 
 
 ## Returns the picture for `pose`, falling back when it is missing:
-## RUN_2 -> RUN_1 -> STANDING, JUMP_AIR -> JUMP_TAKEOFF -> STANDING,
-## everything else -> STANDING.
+## RUN_2 -> RUN_1, JUMP_TAKEOFF -> RUN_1, JUMP_AIR -> JUMP_TAKEOFF -> RUN_1,
+## HURT -> RUN_1.
 func texture_for(pose: Pose) -> Texture2D:
 	match pose:
 		Pose.RUN_1:
-			return run_1 if run_1 else standing
+			return run_1
 		Pose.RUN_2:
-			if run_2:
-				return run_2
-			return run_1 if run_1 else standing
+			return run_2 if run_2 else run_1
 		Pose.JUMP_TAKEOFF:
-			return jump_takeoff if jump_takeoff else standing
+			return jump_takeoff if jump_takeoff else run_1
 		Pose.JUMP_AIR:
 			if jump_air:
 				return jump_air
-			return jump_takeoff if jump_takeoff else standing
+			return jump_takeoff if jump_takeoff else run_1
 		Pose.HURT:
-			return hurt if hurt else standing
+			return hurt if hurt else run_1
 		_:
-			return standing
+			return run_1

@@ -73,5 +73,5 @@ instead of the placeholder shape.
    on the barrel or bamboo scene:
    - Barrel: `assets/barrel/barrel.png`
    - Bamboo: `assets/bamboo/bamboo.png`
-   - Panda poses (in `resources/panda/pink_skin.tres`): `assets/panda/pink/standing.png`,
-     `run_1.png`, `run_2.png`, `jump_takeoff.png`, `jump_air.png`, `hurt.png`
+   - Panda poses (in `resources/panda/pink_skin.tres`): `assets/panda/pink/run_1.png`,
+     `run_2.png`, `jump_takeoff.png`, `jump_air.png`, `hurt.png`

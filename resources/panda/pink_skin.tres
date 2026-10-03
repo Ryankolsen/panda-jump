@@ -1,8 +1,16 @@
-[gd_resource type="Resource" script_class="PandaSkin" load_steps=3 format=3]
+[gd_resource type="Resource" script_class="PandaSkin" load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scripts/panda/panda_skin.gd" id="1"]
-[ext_resource type="Texture2D" path="res://assets/panda/pink/standing.png" id="2"]
+[ext_resource type="Texture2D" path="res://assets/panda/pink/run_1.png" id="2"]
+[ext_resource type="Texture2D" path="res://assets/panda/pink/run_2.png" id="3"]
+[ext_resource type="Texture2D" path="res://assets/panda/pink/jump_takeoff.png" id="4"]
+[ext_resource type="Texture2D" path="res://assets/panda/pink/jump_air.png" id="5"]
+[ext_resource type="Texture2D" path="res://assets/panda/pink/hurt.png" id="6"]
 
 [resource]
 script = ExtResource("1")
-standing = ExtResource("2")
+run_1 = ExtResource("2")
+run_2 = ExtResource("3")
+jump_takeoff = ExtResource("4")
+jump_air = ExtResource("5")
+hurt = ExtResource("6")
