@@ -49,6 +49,25 @@ instead of the placeholder shape.
    clipped), pass the optional brightness, grayness and height arguments,
    e.g. `python tools/cutout.py photo.jpg assets/panda/pink/run_1.png 140 30 512`.
 
+   When cutting out a **set** of poses for the same panda (e.g. all five
+   `run_1`/`run_2`/`jump_takeoff`/`jump_air`/`hurt` pictures), use
+   `tools/cutout_set.py` instead of running `cutout.py` on each photo
+   separately. The game scales every pose picture to the panda's display
+   height, so if each pose were trimmed to its own tightest crop the panda's
+   apparent body size would shift pose to pose. `cutout_set.py` cuts out
+   each photo the same way `cutout.py` does, then crops every photo to one
+   shared box — the union of all their individual foreground boxes — so the
+   panda's body renders at a consistent size across poses:
+
+   ```sh
+   python tools/cutout_set.py assets/panda/pink \
+       run_1_photo.jpg:run_1.png run_2_photo.jpg:run_2.png
+   ```
+
+   All the input photos must be the same pixel size; `cutout_set.py` exits
+   with an error otherwise, since a shared crop box only makes sense on a
+   shared canvas.
+
 3. Keep the original photo in `art/originals/`.
 4. Set the texture on the right pose in `resources/panda/pink_skin.tres`, or
    on the barrel or bamboo scene:
