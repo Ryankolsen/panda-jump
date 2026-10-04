@@ -77,6 +77,23 @@ theme_override_constants/outline_size = 4
 theme_override_font_sizes/font_size = 16
 text = ""
 
+[node name="PickLabel" type="Label" parent="Margin/VBox/Columns/Left"]
+visible = false
+layout_mode = 2
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 16
+text = "Pick your emoji"
+
+[node name="Picker" type="GridContainer" parent="Margin/VBox/Columns/Left"]
+visible = false
+layout_mode = 2
+columns = 4
+theme_override_constants/h_separation = 4
+theme_override_constants/v_separation = 4
+
 [node name="RunBest" type="Label" parent="Margin/VBox/Columns/Left"]
 visible = false
 layout_mode = 2

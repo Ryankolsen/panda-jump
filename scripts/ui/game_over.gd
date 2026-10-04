@@ -27,6 +27,12 @@ const HIGHLIGHT_COLOR := Color("FFD94A")
 const NORMAL_COLOR := Color(1, 1, 1, 1)
 
 const EMOJI_FONT_PATH := "res://assets/fonts/emoji_subset.ttf"
+const PICKER_BUTTON_SIZE := Vector2(32, 32)
+
+## Emitted every time a picker button is tapped, after the leaderboard
+## entry has been re-tagged and the board re-rendered. Main listens so it
+## can persist both the board and the last-picked emoji (#31).
+signal emoji_picked(emoji: String)
 
 @onready var _card_root: MarginContainer = $Margin
 @onready var _title_label: Label = $Margin/VBox/TitleLabel
@@ -34,6 +40,8 @@ const EMOJI_FONT_PATH := "res://assets/fonts/emoji_subset.ttf"
 @onready var _run_header_label: Label = $Margin/VBox/Columns/Left/RunHeader
 @onready var _run_score_label: Label = $Margin/VBox/Columns/Left/RunScore
 @onready var _run_badge_label: Label = $Margin/VBox/Columns/Left/RunBadge
+@onready var _pick_label: Label = $Margin/VBox/Columns/Left/PickLabel
+@onready var _picker_grid: GridContainer = $Margin/VBox/Columns/Left/Picker
 @onready var _run_best_label: Label = $Margin/VBox/Columns/Left/RunBest
 @onready var _run_gap_label: Label = $Margin/VBox/Columns/Left/RunGap
 @onready var _board_header_label: Label = $Margin/VBox/Columns/Right/BoardHeader
@@ -41,6 +49,8 @@ const EMOJI_FONT_PATH := "res://assets/fonts/emoji_subset.ttf"
 @onready var _input_delay_timer: Timer = $InputDelayTimer
 
 var _accepting_input: bool = false
+var _leaderboard: Leaderboard
+var _picker_rank: int = -1
 
 
 func _ready() -> void:
@@ -49,20 +59,32 @@ func _ready() -> void:
 	_input_delay_timer.timeout.connect(_on_input_delay_timeout)
 
 	# #30: applied once to Margin, the ancestor Control of both the board's
-	# emoji column and the picker buttons (added in the next slice), rather
-	# than per label — see card_font()'s doc comment.
+	# emoji column and the picker buttons, rather than per label — see
+	# card_font()'s doc comment.
 	var card_theme := Theme.new()
 	card_theme.default_font = card_font()
 	_card_root.theme = card_theme
+
+	# Built once from Leaderboard.PICKER_EMOJI, the single source of truth
+	# for the picker's emoji set — see that constant's doc comment.
+	# focus_mode is NONE like pause_menu.gd's button, so Space (also bound
+	# to jump) can never press one.
+	for emoji in Leaderboard.PICKER_EMOJI:
+		var button := Button.new()
+		button.text = emoji
+		button.custom_minimum_size = PICKER_BUTTON_SIZE
+		button.focus_mode = Control.FOCUS_NONE
+		button.pressed.connect(_on_picker_button_pressed.bind(emoji))
+		_picker_grid.add_child(button)
 
 
 ## The Game Over card's font: the engine's own default font, falling back
 ## to the bundled emoji subset font (res://assets/fonts/emoji_subset.ttf)
 ## for glyphs the default font can't draw — notably Leaderboard.PICKER_EMOJI,
-## shown in the board's emoji column and (from the next slice) the picker
-## buttons. Applied once in _ready() as a Theme on the card's root Control,
-## not per label, so both columns pick it up for free. Existing per-label
-## overrides (size, colour, outline) still apply on top of this.
+## shown in the board's emoji column and the picker buttons (#31). Applied
+## once in _ready() as a Theme on the card's root Control, not per label,
+## so both columns pick it up for free. Existing per-label overrides
+## (size, colour, outline) still apply on top of this.
 ##
 ## A static pure function so it's testable without a scene tree.
 static func card_font() -> Font:
@@ -132,6 +154,12 @@ func show_game_over(score: int, leaderboard: Leaderboard, rank: int, input_delay
 		_run_best_label.text = missed_lines[0]
 		_run_gap_label.text = missed_lines[1]
 
+	var ranked := rank >= 1
+	_pick_label.visible = ranked
+	_picker_grid.visible = ranked
+	_leaderboard = leaderboard
+	_picker_rank = rank
+
 	_board_header_label.text = "Top Scores"
 	_rebuild_board(leaderboard, rank)
 
@@ -145,8 +173,12 @@ func show_game_over(score: int, leaderboard: Leaderboard, rank: int, input_delay
 ## `highlighted_rank` (this run's, if it made the board) is picked out in
 ## gold; every other row stays white.
 func _rebuild_board(leaderboard: Leaderboard, highlighted_rank: int) -> void:
+	# free(), not queue_free(): a picker tap rebuilds the board again in the
+	# same frame as the initial show_game_over() rebuild, and new rows are
+	# added right below this loop — a deferred free would leave both sets
+	# of labels in the grid until the next frame.
 	for child in _board_grid.get_children():
-		child.queue_free()
+		child.free()
 
 	var rows: Array = GameOver.board_rows(leaderboard.entries(), leaderboard.size())
 	for i in range(rows.size()):
@@ -164,6 +196,27 @@ func _rebuild_board(leaderboard: Leaderboard, highlighted_rank: int) -> void:
 				label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 				label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			_board_grid.add_child(label)
+
+
+## The picker's 8 buttons, in Leaderboard.PICKER_EMOJI order. Exposed so
+## tests can drive and inspect them without relying on node paths into the
+## GridContainer.
+func picker_buttons() -> Array[Button]:
+	var buttons: Array[Button] = []
+	for child in _picker_grid.get_children():
+		if child is Button:
+			buttons.append(child)
+	return buttons
+
+
+## Re-tags this run's board entry with `emoji`, re-renders the board so the
+## highlighted row shows it immediately, and emits emoji_picked so Main can
+## persist both the board and the last-picked emoji. The player can tap
+## again to change it — there is no limit.
+func _on_picker_button_pressed(emoji: String) -> void:
+	_leaderboard.set_emoji(_picker_rank, emoji)
+	_rebuild_board(_leaderboard, _picker_rank)
+	emoji_picked.emit(emoji)
 
 
 func _on_input_delay_timeout() -> void:

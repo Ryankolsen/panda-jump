@@ -57,6 +57,7 @@ func _ready() -> void:
 
 	_game_over = GAME_OVER_SCENE.instantiate()
 	add_child(_game_over)
+	_game_over.emoji_picked.connect(_on_emoji_picked)
 
 	var rng := RandomNumberGenerator.new()
 	rng.seed = randi()
@@ -141,3 +142,12 @@ func _on_health_died() -> void:
 	var rank: int = leaderboard.submit(pace.score, _score_store.load_last_emoji())
 	_score_store.save_data(leaderboard.to_data())
 	_game_over.show_game_over(pace.score, leaderboard, rank, tuning.game_over_input_delay)
+
+
+## Persists a pick made on the Game Over card's emoji picker: the whole
+## board (the entry's emoji just changed) and the last-picked emoji, so a
+## later run's submit() tags it the same way. This is the second save
+## after a run ends, following the one in _on_health_died above.
+func _on_emoji_picked(emoji: String) -> void:
+	_score_store.save_data(leaderboard.to_data())
+	_score_store.save_last_emoji(emoji)
