@@ -53,3 +53,10 @@ func best() -> int:
 	if _entries.is_empty():
 		return 0
 	return _entries[0]["score"]
+
+
+## The board's configured capacity (tuning.leaderboard_size), so callers
+## building a fixed number of display rows — see GameOver.board_rows —
+## don't need a second reference to the Tuning this board was built from.
+func size() -> int:
+	return _size

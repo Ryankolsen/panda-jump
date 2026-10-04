@@ -33,6 +33,7 @@ var _next_spawn_at: float = 0.0
 var _hud: Hud
 var _game_over: GameOver
 var _pause_menu: PauseMenu
+var leaderboard: Leaderboard
 
 
 func _ready() -> void:
@@ -118,13 +119,20 @@ func _on_barrel_hit_panda(_body: Node2D) -> void:
 	health.hit()
 
 
-## Freezes the run and shows the Game Over screen with the final score. The
-## screen itself (process_mode ALWAYS) keeps running while paused so its
+## Freezes the run, submits the final score to a fresh Leaderboard, and
+## shows the Game Over screen with this run's rank on it. The screen
+## itself (process_mode ALWAYS) keeps running while paused so its
 ## input-delay timer and restart tap still work; everything else here
 ## (Main, Panda, the HUD, barrels) is left on the default PAUSABLE mode and
 ## simply stops, which is what makes the freeze work. The pause button is
 ## locked first so it can't unfreeze the tree from under Game Over.
+##
+## The leaderboard lives only in memory for this run (see #26); restarting
+## reloads the scene (#10) and builds a fresh one, so nothing persists yet
+## — that's #27.
 func _on_health_died() -> void:
 	_pause_menu.lock()
 	get_tree().paused = true
-	_game_over.show_game_over(pace.score, tuning.game_over_input_delay)
+	leaderboard = Leaderboard.new(tuning)
+	var rank: int = leaderboard.submit(pace.score, Leaderboard.DEFAULT_EMOJI)
+	_game_over.show_game_over(pace.score, leaderboard, rank, tuning.game_over_input_delay)

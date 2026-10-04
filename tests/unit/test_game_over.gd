@@ -1,18 +1,38 @@
 extends GutTest
 
-# Issue #10: the Game Over screen's copy is kept in a static, pure function
-# so it's testable without a scene tree — see GameOver.lines_for.
+# Issue #26: the Game Over screen's copy is kept in static, pure functions
+# so it's testable without a scene tree — see GameOver.run_lines and
+# GameOver.board_rows.
 
-func test_lines_for_has_three_entries():
-	var lines: Array[String] = GameOver.lines_for(250)
-	assert_eq(lines.size(), 3, "the screen shows exactly three lines")
-
-
-func test_lines_for_content():
-	var lines: Array[String] = GameOver.lines_for(250)
-	assert_eq(lines, ["Game Over", "Score: 250", "Tap to play again"], "exact copy and final score")
+func test_run_lines_new_best():
+	var lines: Array[String] = GameOver.run_lines(1240, 1)
+	assert_eq(lines, ["This run", "1,240", "New best!"], "rank 1 shows the New best! badge")
 
 
-func test_lines_for_zero_score():
-	var lines: Array[String] = GameOver.lines_for(0)
-	assert_eq(lines[1], "Score: 0", "a zero score still reads Score: 0")
+func test_run_lines_not_best():
+	var lines: Array[String] = GameOver.run_lines(1240, 3)
+	assert_eq(lines, ["This run", "1,240", ""], "a rank below 1 shows a blank badge line")
+
+
+func test_run_lines_off_board():
+	var lines: Array[String] = GameOver.run_lines(1240, -1)
+	assert_eq(lines, ["This run", "1,240", ""], "not making the board shows a blank badge line")
+
+
+func test_board_rows_one_entry_padded_to_size():
+	var rows: Array = GameOver.board_rows([{"score": 1240, "emoji": "🐼"}], 5)
+	assert_eq(rows, [
+		["1", "🐼", "1,240"],
+		["2", "—", "—"],
+		["3", "—", "—"],
+		["4", "—", "—"],
+		["5", "—", "—"],
+	], "one real entry then blank slots, ranked and formatted")
+
+
+func test_board_rows_empty_board():
+	var rows: Array = GameOver.board_rows([], 5)
+	assert_eq(rows.size(), 5, "always exactly size rows")
+	for row in rows:
+		assert_eq(row[1], "—", "empty slot shows an em dash for emoji")
+		assert_eq(row[2], "—", "empty slot shows an em dash for score")
