@@ -90,6 +90,7 @@ text = "Pick your emoji"
 [node name="Picker" type="GridContainer" parent="Margin/VBox/Columns/Left"]
 visible = false
 layout_mode = 2
+size_flags_horizontal = 4
 columns = 4
 theme_override_constants/h_separation = 4
 theme_override_constants/v_separation = 4

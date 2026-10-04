@@ -61,6 +61,30 @@ func test_pressing_fox_updates_the_highlighted_row_label():
 	assert_eq(emoji_label.text, "🦊", "the highlighted row's emoji label updates immediately")
 
 
+func test_picker_grid_is_horizontally_centred_in_the_left_column():
+	var go: GameOver = add_child_autofree(preload("res://scenes/ui/game_over.tscn").instantiate())
+	var board := Leaderboard.new(Tuning.new())
+	board.submit(1240, "🐼")
+	go.show_game_over(1240, board, 1, 0.5)
+	await wait_process_frames(2)
+
+	var left_column: VBoxContainer = go.get_node("Margin/VBox/Columns/Left")
+	var buttons: Array[Button] = go.picker_buttons()
+
+	# The grid's own rect fills the column by default (Containers stretch to
+	# fit their parent), so measuring the grid node's bounds against the
+	# column's bounds can't tell a centred button block from a left-aligned
+	# one. The buttons' own bounding box is what actually has to be centred.
+	var left_edge: float = buttons[0].global_position.x
+	var right_edge: float = left_edge
+	for button in buttons:
+		left_edge = min(left_edge, button.global_position.x)
+		right_edge = max(right_edge, button.global_position.x + button.size.x)
+	var buttons_centre: float = (left_edge + right_edge) / 2.0
+	var column_centre: float = left_column.global_position.x + left_column.size.x / 2.0
+	assert_almost_eq(buttons_centre, column_centre, 1.0, "the picker buttons are horizontally centred in the left column")
+
+
 func test_picker_is_hidden_when_the_run_missed_the_board():
 	var go: GameOver = add_child_autofree(preload("res://scenes/ui/game_over.tscn").instantiate())
 	var board := Leaderboard.new(Tuning.new())
