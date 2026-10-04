@@ -60,3 +60,53 @@ func best() -> int:
 ## don't need a second reference to the Tuning this board was built from.
 func size() -> int:
 	return _size
+
+
+## The board as plain data ({"score": int, "emoji": String} Dictionaries, in
+## rank order), ready to hand to ScoreStore.save_data(). Same copy semantics
+## as entries().
+func to_data() -> Array:
+	return entries()
+
+
+## Replaces the board from previously-saved plain data, defensively: a
+## non-Array argument is ignored (board left empty); elements that aren't a
+## Dictionary, have no int "score", or have "score" <= 0 are skipped;
+## a missing or non-String "emoji" becomes DEFAULT_EMOJI. The result is
+## re-sorted highest score first, preserving saved order between equal
+## scores, and trimmed to _size.
+func load_data(data: Variant) -> void:
+	_entries.clear()
+	if not data is Array:
+		return
+
+	# Each valid element keeps its original index alongside it so the sort
+	# below — Array.sort_custom's stability isn't documented/guaranteed —
+	# can break score ties by that index instead, which is what actually
+	# preserves saved order between equal scores.
+	var valid: Array[Dictionary] = []
+	for index in data.size():
+		var element: Variant = data[index]
+		if not element is Dictionary:
+			continue
+		if not element.has("score") or not element["score"] is int:
+			continue
+		if element["score"] <= 0:
+			continue
+
+		var emoji: String = DEFAULT_EMOJI
+		if element.has("emoji") and element["emoji"] is String:
+			emoji = element["emoji"]
+
+		valid.append({"score": element["score"], "emoji": emoji, "_index": index})
+
+	valid.sort_custom(func(a, b):
+		if a["score"] != b["score"]:
+			return a["score"] > b["score"]
+		return a["_index"] < b["_index"]
+	)
+	valid.resize(mini(valid.size(), _size))
+
+	_entries = []
+	for entry in valid:
+		_entries.append({"score": entry["score"], "emoji": entry["emoji"]})

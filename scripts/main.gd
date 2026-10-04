@@ -34,6 +34,7 @@ var _hud: Hud
 var _game_over: GameOver
 var _pause_menu: PauseMenu
 var leaderboard: Leaderboard
+var _score_store: ScoreStore
 
 
 func _ready() -> void:
@@ -127,12 +128,16 @@ func _on_barrel_hit_panda(_body: Node2D) -> void:
 ## simply stops, which is what makes the freeze work. The pause button is
 ## locked first so it can't unfreeze the tree from under Game Over.
 ##
-## The leaderboard lives only in memory for this run (see #26); restarting
-## reloads the scene (#10) and builds a fresh one, so nothing persists yet
-## — that's #27.
+## The board is loaded fresh from disk here (never cached across runs —
+## restarting reloads the scene per #10, which builds a new Leaderboard),
+## then saved again before Game Over is shown, so this run's score survives
+## even if the app is closed while the Game Over card is still up.
 func _on_health_died() -> void:
 	_pause_menu.lock()
 	get_tree().paused = true
 	leaderboard = Leaderboard.new(tuning)
+	_score_store = ScoreStore.new()
+	leaderboard.load_data(_score_store.load_data())
 	var rank: int = leaderboard.submit(pace.score, Leaderboard.DEFAULT_EMOJI)
+	_score_store.save_data(leaderboard.to_data())
 	_game_over.show_game_over(pace.score, leaderboard, rank, tuning.game_over_input_delay)

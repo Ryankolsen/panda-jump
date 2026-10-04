@@ -91,3 +91,58 @@ func test_custom_leaderboard_size_caps_the_board():
 	for score in [10, 20, 30, 40]:
 		board.submit(score, "🐼")
 	assert_eq(board.entries().size(), 3, "a custom leaderboard_size of 3 caps the board at 3 entries")
+
+
+# Issue #27: Leaderboard gains to_data()/load_data() so Main can persist and
+# restore the board across runs via ScoreStore.
+
+func test_to_data_returns_entries_as_plain_data():
+	var board := Leaderboard.new(Tuning.new())
+	board.submit(300, "🐼")
+	board.submit(100, "🐼")
+	assert_eq(board.to_data(), [{"score": 300, "emoji": "🐼"}, {"score": 100, "emoji": "🐼"}], "to_data gives the exact plain-data array")
+
+
+func test_load_data_round_trips_through_to_data():
+	var board1 := Leaderboard.new(Tuning.new())
+	board1.submit(300, "🦊")
+	board1.submit(100, "🐸")
+	var board2 := Leaderboard.new(Tuning.new())
+	board2.load_data(board1.to_data())
+	assert_eq(board2.entries(), board1.entries(), "load_data(to_data()) round-trips to an identical board")
+
+
+func test_load_data_of_seven_entries_trims_to_five_sorted_highest_first():
+	var board := Leaderboard.new(Tuning.new())
+	var data := [
+		{"score": 40, "emoji": "🐼"},
+		{"score": 70, "emoji": "🐼"},
+		{"score": 10, "emoji": "🐼"},
+		{"score": 90, "emoji": "🐼"},
+		{"score": 20, "emoji": "🐼"},
+		{"score": 60, "emoji": "🐼"},
+		{"score": 30, "emoji": "🐼"},
+	]
+	board.load_data(data)
+	var scores := []
+	for entry in board.entries():
+		scores.append(entry["score"])
+	assert_eq(scores, [90, 70, 60, 40, 30], "7 entries load as the top 5, sorted highest first")
+
+
+func test_load_data_with_non_array_leaves_the_board_empty():
+	var board := Leaderboard.new(Tuning.new())
+	board.load_data("nonsense")
+	assert_eq(board.entries(), [], "a non-Array argument is ignored, leaving the board empty")
+
+
+func test_load_data_preserves_saved_order_between_equal_scores():
+	var board := Leaderboard.new(Tuning.new())
+	board.load_data([{"score": 200, "emoji": "🦊"}, {"score": 200, "emoji": "🐸"}])
+	assert_eq(board.entries(), [{"score": 200, "emoji": "🦊"}, {"score": 200, "emoji": "🐸"}], "equal scores keep their saved order")
+
+
+func test_load_data_skips_invalid_elements_and_defaults_missing_emoji():
+	var board := Leaderboard.new(Tuning.new())
+	board.load_data([42, {"emoji": "🦊"}, {"score": 0, "emoji": "🦊"}, {"score": 50}])
+	assert_eq(board.entries(), [{"score": 50, "emoji": "🐼"}], "non-Dictionary, missing/zero score, and missing-emoji entries are handled")
