@@ -26,6 +26,9 @@ const PROMPT_TEXT := "Tap to play again"
 const HIGHLIGHT_COLOR := Color("FFD94A")
 const NORMAL_COLOR := Color(1, 1, 1, 1)
 
+const EMOJI_FONT_PATH := "res://assets/fonts/emoji_subset.ttf"
+
+@onready var _card_root: MarginContainer = $Margin
 @onready var _title_label: Label = $Margin/VBox/TitleLabel
 @onready var _prompt_label: Label = $Margin/VBox/PromptLabel
 @onready var _run_header_label: Label = $Margin/VBox/Columns/Left/RunHeader
@@ -44,6 +47,29 @@ func _ready() -> void:
 	visible = false
 	_input_delay_timer.one_shot = true
 	_input_delay_timer.timeout.connect(_on_input_delay_timeout)
+
+	# #30: applied once to Margin, the ancestor Control of both the board's
+	# emoji column and the picker buttons (added in the next slice), rather
+	# than per label — see card_font()'s doc comment.
+	var card_theme := Theme.new()
+	card_theme.default_font = card_font()
+	_card_root.theme = card_theme
+
+
+## The Game Over card's font: the engine's own default font, falling back
+## to the bundled emoji subset font (res://assets/fonts/emoji_subset.ttf)
+## for glyphs the default font can't draw — notably Leaderboard.PICKER_EMOJI,
+## shown in the board's emoji column and (from the next slice) the picker
+## buttons. Applied once in _ready() as a Theme on the card's root Control,
+## not per label, so both columns pick it up for free. Existing per-label
+## overrides (size, colour, outline) still apply on top of this.
+##
+## A static pure function so it's testable without a scene tree.
+static func card_font() -> Font:
+	var font := FontVariation.new()
+	font.base_font = ThemeDB.fallback_font
+	font.fallbacks = [load(EMOJI_FONT_PATH)]
+	return font
 
 
 ## This run's column copy, kept as a static pure function so it's testable
