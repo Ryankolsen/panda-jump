@@ -186,3 +186,71 @@ func test_gap_to_board_with_empty_slot():
 func test_gap_to_board_on_empty_board():
 	var board := Leaderboard.new(Tuning.new())
 	assert_eq(board.gap_to_board(0), 1, "an empty board still needs a positive score")
+
+
+# Issue #29: emoji data — picker set, normalize_emoji, and re-tagging by
+# rank via set_emoji. No UI here; the picker comes later.
+
+func test_picker_emoji_is_the_exact_eight_entry_list_of_single_code_points():
+	assert_eq(Leaderboard.PICKER_EMOJI, ["🐼", "🎋", "🐻", "🦊", "🐸", "🐰", "🐱", "⭐"], "PICKER_EMOJI matches tools/subset_emoji.py's set and order")
+	for emoji in Leaderboard.PICKER_EMOJI:
+		assert_eq(emoji.length(), 1, "each picker emoji is a single code point with no U+FE0F variation selector")
+
+
+func test_normalize_emoji_returns_a_picker_emoji_unchanged():
+	assert_eq(Leaderboard.normalize_emoji("🦊"), "🦊", "a String already in PICKER_EMOJI passes through unchanged")
+
+
+func test_normalize_emoji_defaults_anything_not_in_the_picker_set():
+	assert_eq(Leaderboard.normalize_emoji("🦄"), "🐼", "an emoji outside the picker set defaults to 🐼")
+	assert_eq(Leaderboard.normalize_emoji(""), "🐼", "an empty string defaults to 🐼")
+	assert_eq(Leaderboard.normalize_emoji(null), "🐼", "null defaults to 🐼")
+	assert_eq(Leaderboard.normalize_emoji(5), "🐼", "a non-String defaults to 🐼")
+
+
+func test_submit_normalizes_an_unknown_emoji():
+	var board := Leaderboard.new(Tuning.new())
+	board.submit(100, "🦄")
+	assert_eq(board.entries()[0]["emoji"], "🐼", "submit stores normalize_emoji's result, not the raw argument")
+
+
+func test_load_data_normalizes_an_unknown_emoji():
+	var board := Leaderboard.new(Tuning.new())
+	board.load_data([{"score": 100, "emoji": "🦄"}])
+	assert_eq(board.entries()[0]["emoji"], "🐼", "load_data normalizes an unknown emoji string to 🐼")
+
+
+func test_set_emoji_retags_only_the_given_rank():
+	var board := Leaderboard.new(Tuning.new())
+	board.submit(300, "🐼")
+	board.submit(100, "🐼")
+	board.set_emoji(2, "🐸")
+	var scores := []
+	for entry in board.entries():
+		scores.append(entry["score"])
+	assert_eq(scores, [300, 100], "set_emoji never changes scores or order")
+	assert_eq(board.entries()[0]["emoji"], "🐼", "rank 1 is untouched")
+	assert_eq(board.entries()[1]["emoji"], "🐸", "rank 2 is retagged")
+
+
+func test_set_emoji_with_rank_outside_bounds_leaves_the_board_unchanged():
+	var board := Leaderboard.new(Tuning.new())
+	board.submit(300, "🐼")
+	board.submit(100, "🐼")
+	var before := board.entries()
+
+	board.set_emoji(-1, "🐸")
+	assert_eq(board.entries(), before, "rank -1 is out of bounds and does nothing")
+
+	board.set_emoji(0, "🐸")
+	assert_eq(board.entries(), before, "rank 0 is out of bounds and does nothing")
+
+	board.set_emoji(6, "🐸")
+	assert_eq(board.entries(), before, "a rank past the board size is out of bounds and does nothing")
+
+
+func test_set_emoji_normalizes_an_unknown_emoji():
+	var board := Leaderboard.new(Tuning.new())
+	board.submit(300, "🐼")
+	board.set_emoji(1, "🦄")
+	assert_eq(board.entries()[0]["emoji"], "🐼", "set_emoji stores normalize_emoji's result, not the raw argument")

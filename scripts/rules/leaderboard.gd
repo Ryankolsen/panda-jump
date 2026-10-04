@@ -10,12 +10,27 @@ extends RefCounted
 
 const DEFAULT_EMOJI := "🐼"
 
+## The emoji offered by the Game Over picker, in picker order. Must stay
+## identical to tools/subset_emoji.py's EMOJI list (same code points, same
+## order) — that script subsets the font to exactly this set.
+const PICKER_EMOJI: Array[String] = ["🐼", "🎋", "🐻", "🦊", "🐸", "🐰", "🐱", "⭐"]
+
 var _size: int
 var _entries: Array[Dictionary] = []
 
 
 func _init(tuning: Tuning) -> void:
 	_size = tuning.leaderboard_size
+
+
+## `emoji` if it is a String in PICKER_EMOJI, otherwise DEFAULT_EMOJI. The
+## single gate every emoji passes through on its way into the board —
+## submit(), load_data(), and set_emoji() all route through this, so a
+## saved board or a re-tag can never carry an emoji outside the picker set.
+static func normalize_emoji(emoji: Variant) -> String:
+	if emoji is String and PICKER_EMOJI.has(emoji):
+		return emoji
+	return DEFAULT_EMOJI
 
 
 ## Inserts score/emoji into the board if it ranks, keeping entries sorted
@@ -35,7 +50,7 @@ func submit(score: int, emoji: String) -> int:
 	if index >= _size:
 		return -1
 
-	_entries.insert(index, {"score": score, "emoji": emoji})
+	_entries.insert(index, {"score": score, "emoji": normalize_emoji(emoji)})
 	if _entries.size() > _size:
 		_entries.resize(_size)
 
@@ -86,7 +101,8 @@ func to_data() -> Array:
 ## Replaces the board from previously-saved plain data, defensively: a
 ## non-Array argument is ignored (board left empty); elements that aren't a
 ## Dictionary, have no int "score", or have "score" <= 0 are skipped;
-## a missing or non-String "emoji" becomes DEFAULT_EMOJI. The result is
+## a missing, non-String, or unrecognized "emoji" becomes DEFAULT_EMOJI (see
+## normalize_emoji). The result is
 ## re-sorted highest score first, preserving saved order between equal
 ## scores, and trimmed to _size.
 func load_data(data: Variant) -> void:
@@ -108,11 +124,8 @@ func load_data(data: Variant) -> void:
 		if element["score"] <= 0:
 			continue
 
-		var emoji: String = DEFAULT_EMOJI
-		if element.has("emoji") and element["emoji"] is String:
-			emoji = element["emoji"]
-
-		valid.append({"score": element["score"], "emoji": emoji, "_index": index})
+		var emoji: Variant = element.get("emoji")
+		valid.append({"score": element["score"], "emoji": normalize_emoji(emoji), "_index": index})
 
 	valid.sort_custom(func(a, b):
 		if a["score"] != b["score"]:
@@ -124,3 +137,12 @@ func load_data(data: Variant) -> void:
 	_entries = []
 	for entry in valid:
 		_entries.append({"score": entry["score"], "emoji": entry["emoji"]})
+
+
+## Re-tags the entry at 1-based `rank` with normalize_emoji(emoji). A rank
+## outside 1..entries().size() (including a negative rank) does nothing;
+## order and scores are never touched.
+func set_emoji(rank: int, emoji: String) -> void:
+	if rank < 1 or rank > _entries.size():
+		return
+	_entries[rank - 1]["emoji"] = normalize_emoji(emoji)

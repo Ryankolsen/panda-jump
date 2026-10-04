@@ -138,6 +138,6 @@ func _on_health_died() -> void:
 	leaderboard = Leaderboard.new(tuning)
 	_score_store = ScoreStore.new()
 	leaderboard.load_data(_score_store.load_data())
-	var rank: int = leaderboard.submit(pace.score, Leaderboard.DEFAULT_EMOJI)
+	var rank: int = leaderboard.submit(pace.score, _score_store.load_last_emoji())
 	_score_store.save_data(leaderboard.to_data())
 	_game_over.show_game_over(pace.score, leaderboard, rank, tuning.game_over_input_delay)

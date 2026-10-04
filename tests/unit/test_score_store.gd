@@ -54,3 +54,54 @@ func test_save_preserves_an_unrelated_section_already_present():
 	var reloaded := ConfigFile.new()
 	reloaded.load(_path)
 	assert_eq(reloaded.get_value("player", "x"), 1, "save_data does not clobber an unrelated section/key")
+
+
+# Issue #29: the last-picked emoji is a second thing ScoreStore persists,
+# cross-preserved with the leaderboard section.
+
+func test_save_last_emoji_then_a_fresh_store_loads_it_back():
+	ScoreStore.new(_path).save_last_emoji("🦊")
+	var loaded := ScoreStore.new(_path).load_last_emoji()
+	assert_eq(loaded, "🦊", "a fresh ScoreStore on the same path reads back the saved last emoji")
+
+
+func test_load_last_emoji_with_no_file_returns_default():
+	var loaded := ScoreStore.new(_path).load_last_emoji()
+	assert_eq(loaded, "🐼", "loading from a path with no file returns the default emoji")
+
+
+func test_load_last_emoji_with_garbage_file_returns_default():
+	var absolute_path := ProjectSettings.globalize_path(_path)
+	var file := FileAccess.open(absolute_path, FileAccess.WRITE)
+	file.store_string("{{{ not a config")
+	file.close()
+	var loaded := ScoreStore.new(_path).load_last_emoji()
+	assert_eq(loaded, "🐼", "a garbage/corrupt file loads the default emoji")
+
+
+func test_load_last_emoji_with_no_key_returns_default():
+	var config := ConfigFile.new()
+	config.set_value("player", "other", 1)
+	config.save(_path)
+	var loaded := ScoreStore.new(_path).load_last_emoji()
+	assert_eq(loaded, "🐼", "a file with no player/last_emoji key loads the default emoji")
+
+
+func test_saved_last_emoji_outside_the_picker_set_loads_as_default():
+	ScoreStore.new(_path).save_last_emoji("🦄")
+	var loaded := ScoreStore.new(_path).load_last_emoji()
+	assert_eq(loaded, "🐼", "a saved last emoji outside the picker set loads as the default")
+
+
+func test_save_last_emoji_preserves_the_saved_board():
+	ScoreStore.new(_path).save_data([{"score": 50, "emoji": "🐼"}])
+	ScoreStore.new(_path).save_last_emoji("🐸")
+	assert_eq(ScoreStore.new(_path).load_data(), [{"score": 50, "emoji": "🐼"}], "save_last_emoji keeps the saved board")
+	assert_eq(ScoreStore.new(_path).load_last_emoji(), "🐸", "and still saves the last emoji")
+
+
+func test_save_data_preserves_the_saved_last_emoji():
+	ScoreStore.new(_path).save_last_emoji("🐸")
+	ScoreStore.new(_path).save_data([{"score": 50, "emoji": "🐼"}])
+	assert_eq(ScoreStore.new(_path).load_last_emoji(), "🐸", "save_data keeps the saved last emoji")
+	assert_eq(ScoreStore.new(_path).load_data(), [{"score": 50, "emoji": "🐼"}], "and still saves the board")

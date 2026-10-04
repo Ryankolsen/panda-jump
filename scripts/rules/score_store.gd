@@ -10,6 +10,8 @@ extends RefCounted
 
 const SECTION := "leaderboard"
 const KEY := "entries"
+const PLAYER_SECTION := "player"
+const LAST_EMOJI_KEY := "last_emoji"
 
 var _path: String
 
@@ -43,4 +45,28 @@ func save_data(data: Array) -> void:
 	# ConfigFile — there is nothing else to preserve in that case.
 	config.load(_path)
 	config.set_value(SECTION, KEY, data)
+	config.save(_path)
+
+
+## The device's last-picked emoji, passed through
+## Leaderboard.normalize_emoji, or DEFAULT_EMOJI if the file is missing,
+## unreadable, corrupt, or the key is missing. Never errors.
+func load_last_emoji() -> String:
+	var config := ConfigFile.new()
+	var err := config.load(_path)
+	if err != OK:
+		return Leaderboard.DEFAULT_EMOJI
+
+	var value: Variant = config.get_value(PLAYER_SECTION, LAST_EMOJI_KEY, Leaderboard.DEFAULT_EMOJI)
+	return Leaderboard.normalize_emoji(value)
+
+
+## Writes the last-picked emoji under "player/last_emoji", preserving any
+## other sections/keys already in the file (e.g. the saved leaderboard).
+func save_last_emoji(emoji: String) -> void:
+	var config := ConfigFile.new()
+	# A failed load (missing/corrupt file) just means starting from a blank
+	# ConfigFile — there is nothing else to preserve in that case.
+	config.load(_path)
+	config.set_value(PLAYER_SECTION, LAST_EMOJI_KEY, emoji)
 	config.save(_path)
