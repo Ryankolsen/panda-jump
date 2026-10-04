@@ -20,3 +20,6 @@ build/
 __pycache__/
 .venv/
 venv/
+
+# Claude Code agent worktrees
+.claude/worktrees/
