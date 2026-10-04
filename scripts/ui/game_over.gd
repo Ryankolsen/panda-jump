@@ -8,21 +8,20 @@ extends CanvasLayer
 ## HUD and everything else stay on the default PAUSABLE mode and simply
 ## stop, which is what makes the freeze work.
 ##
-## Laid out as two columns between a title and a restart prompt (#26): the
-## left column is this run's score and either a "New best!" badge (rank
-## #1) or, when the run missed the board entirely (rank -1), the best
-## score on record and how many points it needed to make the board (#28);
-## the right column is the in-memory Leaderboard, always rendered
-## as leaderboard.size() rows, blank slots and all. The board row matching
-## this run's returned rank, and the badge, are picked out in gold; nothing
-## here persists it to disk — a reload (restarting, see #10) drops it,
-## which is expected until #27.
+## Laid out as two columns under a title: the left column is this run's
+## score, either a "New best!" badge (rank #1) or, when the run missed the
+## board entirely (rank -1), the best score on record and how many points
+## it needed to make the board (#28), the emoji picker when ranked, and a
+## "Play again" button at the bottom; the right column is the in-memory
+## Leaderboard, always rendered as leaderboard.size() rows, blank slots and
+## all. The board row matching this run's returned rank, and the badge,
+## are picked out in gold; nothing here persists it to disk — a reload
+## (restarting, see #10) drops it, which is expected until #27.
 ##
 ## No reset method: restarting reloads the scene (#10), which builds a
 ## fresh Main, Health, Pace, Spawner and this screen hidden again.
 
 const TITLE_TEXT := "Game Over"
-const PROMPT_TEXT := "Tap to play again"
 const HIGHLIGHT_COLOR := Color("FFD94A")
 const NORMAL_COLOR := Color(1, 1, 1, 1)
 
@@ -34,9 +33,18 @@ const PICKER_BUTTON_SIZE := Vector2(32, 32)
 ## can persist both the board and the last-picked emoji (#31).
 signal emoji_picked(emoji: String)
 
+## Emitted every time _restart() runs, before the scene tree is actually
+## reloaded. Tests set reload_on_restart to false first so they can assert
+## on this signal without reload_current_scene() tearing down the test
+## run itself (see tests/unit/test_game_over_restart.gd) — the real game
+## always leaves reload_on_restart at its default of true.
+signal restart_requested
+
+## See restart_requested's doc comment above.
+var reload_on_restart: bool = true
+
 @onready var _card_root: MarginContainer = $Margin
 @onready var _title_label: Label = $Margin/VBox/TitleLabel
-@onready var _prompt_label: Label = $Margin/VBox/PromptLabel
 @onready var _run_header_label: Label = $Margin/VBox/Columns/Left/RunHeader
 @onready var _run_score_label: Label = $Margin/VBox/Columns/Left/RunScore
 @onready var _run_badge_label: Label = $Margin/VBox/Columns/Left/RunBadge
@@ -44,6 +52,7 @@ signal emoji_picked(emoji: String)
 @onready var _picker_grid: GridContainer = $Margin/VBox/Columns/Left/Picker
 @onready var _run_best_label: Label = $Margin/VBox/Columns/Left/RunBest
 @onready var _run_gap_label: Label = $Margin/VBox/Columns/Left/RunGap
+@onready var _play_again_button: Button = $Margin/VBox/Columns/Left/PlayAgainButton
 @onready var _board_header_label: Label = $Margin/VBox/Columns/Right/BoardHeader
 @onready var _board_grid: GridContainer = $Margin/VBox/Columns/Right/Board
 @onready var _input_delay_timer: Timer = $InputDelayTimer
@@ -57,6 +66,7 @@ func _ready() -> void:
 	visible = false
 	_input_delay_timer.one_shot = true
 	_input_delay_timer.timeout.connect(_on_input_delay_timeout)
+	_play_again_button.pressed.connect(_restart)
 
 	# #30: applied once to Margin, the ancestor Control of both the board's
 	# emoji column and the picker buttons, rather than per label — see
@@ -133,12 +143,13 @@ static func board_rows(entries: Array, size: int) -> Array:
 
 ## Shows the screen with this run's final `score`, the `leaderboard` it was
 ## just submitted to, and the 1-based `rank` Leaderboard.submit() returned
-## (-1 if it didn't make the board). `jump` is ignored for the first
-## `input_delay` seconds, so a tap already in progress when the last heart
-## goes doesn't skip straight past the screen.
+## (-1 if it didn't make the board). Restarting (the PlayAgainButton, or a
+## keyboard jump/ui_accept press) is ignored for the first `input_delay`
+## seconds, so a death-tap already in progress when the last heart goes
+## doesn't skip straight past the screen.
 func show_game_over(score: int, leaderboard: Leaderboard, rank: int, input_delay: float) -> void:
 	_title_label.text = TITLE_TEXT
-	_prompt_label.text = PROMPT_TEXT
+	_play_again_button.disabled = true
 
 	var run_lines: Array[String] = GameOver.run_lines(score, rank)
 	_run_header_label.text = run_lines[0]
@@ -221,12 +232,22 @@ func _on_picker_button_pressed(emoji: String) -> void:
 
 func _on_input_delay_timeout() -> void:
 	_accepting_input = true
+	_play_again_button.disabled = false
 
 
+## Restarts on a keyboard press only — the `jump` action or `ui_accept`
+## (Space / Enter) — gated on _accepting_input like PlayAgainButton's
+## disabled state above. `jump` also maps to a mouse button (see
+## project.godot), but an InputEventMouseButton is filtered out below
+## before the action check, same as a touch tap arriving via mouse
+## emulation: those restart only through PlayAgainButton now, so a tap
+## anywhere on the card can't be mistaken for a deliberate restart.
 func _unhandled_input(event: InputEvent) -> void:
 	if not visible or not _accepting_input:
 		return
-	if event.is_action_pressed("jump"):
+	if not event is InputEventKey:
+		return
+	if event.is_action_pressed("jump") or event.is_action_pressed("ui_accept"):
 		get_viewport().set_input_as_handled()
 		_restart()
 
@@ -234,5 +255,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func _restart() -> void:
 	_accepting_input = false
 	visible = false
-	get_tree().paused = false
-	get_tree().reload_current_scene()
+	restart_requested.emit()
+	if reload_on_restart:
+		get_tree().paused = false
+		get_tree().reload_current_scene()
