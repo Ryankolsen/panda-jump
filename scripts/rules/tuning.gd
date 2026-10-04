@@ -80,6 +80,9 @@ extends Resource
 ## the other one. See issue #15.
 @export var run_frame_time: float = 0.15
 
+## Highest-scores remembered by Leaderboard. See issue #24.
+@export var leaderboard_size: int = 5
+
 
 ## The highest point above its start a jump reaches: jump_velocity squared
 ## over twice gravity. Follows this tuning's own values, not a constant, so

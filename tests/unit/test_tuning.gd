@@ -18,3 +18,10 @@ func test_jump_apex_follows_tuning_not_a_constant():
 	var tuning := Tuning.new()
 	tuning.jump_velocity = 400.0
 	assert_almost_eq(tuning.jump_apex(), 400.0 * 400.0 / (2.0 * 1400.0), 0.01, "apex recomputes from the tuning's own jump_velocity")
+
+
+# Issue #24: leaderboard_size caps how many entries Leaderboard keeps.
+
+func test_leaderboard_size_defaults_to_five():
+	var tuning := Tuning.new()
+	assert_eq(tuning.leaderboard_size, 5, "default leaderboard_size is 5")
