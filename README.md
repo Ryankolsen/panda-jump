@@ -75,3 +75,26 @@ instead of the placeholder shape.
    - Bamboo: `assets/bamboo/bamboo.png`
    - Panda poses (in `resources/panda/pink_skin.tres`): `assets/panda/pink/run_1.png`,
      `run_2.png`, `jump_takeoff.png`, `jump_air.png`, `hurt.png`
+
+## Changing the emoji
+
+The Game Over card's emoji picker draws its emoji with
+`assets/fonts/emoji_subset.ttf`, a tiny font holding only the picker's
+emoji, cut from Noto Color Emoji. Godot's default font has no emoji, and
+system fallback looks different on every device, so the game bundles its own.
+
+1. Download `NotoColorEmoji.ttf` (the CBDT bitmap build, about 10MB) from
+   `2D/fonts/` in the [googlefonts/noto-emoji](https://github.com/googlefonts/noto-emoji)
+   repo. Don't commit it; only the subset and `assets/fonts/OFL.txt` are.
+2. Edit the `EMOJI` list at the top of `tools/subset_emoji.py`. It must match
+   `Leaderboard`'s picker set, in the same order, one code point each with no
+   U+FE0F variation selector. A GUT test fails if the two drift apart.
+3. Cut the subset with `tools/subset_emoji.py`, which needs fonttools:
+
+   ```sh
+   pip install fonttools
+   python tools/subset_emoji.py NotoColorEmoji.ttf assets/fonts/emoji_subset.ttf
+   ```
+
+4. Open the project in the Godot editor so it reimports the font, and commit
+   `emoji_subset.ttf` together with its `.import` file.
