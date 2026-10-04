@@ -40,7 +40,7 @@ func set_score(score: int) -> void:
 ## The exact text shown in the score label — a static, pure rule kept out
 ## of the drawing code so it's testable without a scene tree.
 static func score_text(score: int) -> String:
-	return "Score: %d" % score
+	return "Score: %s" % NumberFormat.thousands(score)
 
 
 ## Returns, left to right, whether each of `max_hearts` heart slots is full
