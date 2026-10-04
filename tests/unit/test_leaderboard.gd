@@ -146,3 +146,43 @@ func test_load_data_skips_invalid_elements_and_defaults_missing_emoji():
 	var board := Leaderboard.new(Tuning.new())
 	board.load_data([42, {"emoji": "🦊"}, {"score": 0, "emoji": "🦊"}, {"score": 50}])
 	assert_eq(board.entries(), [{"score": 50, "emoji": "🐼"}], "non-Dictionary, missing/zero score, and missing-emoji entries are handled")
+
+
+# Issue #28: gap_to_board() tells a run that missed the board how many
+# points it needed, so the Game Over copy can give the player something
+# to aim for.
+
+func test_gap_to_board_on_full_board():
+	var board := Leaderboard.new(Tuning.new())
+	for score in [900, 800, 700, 600, 500]:
+		board.submit(score, "🐼")
+	assert_eq(board.gap_to_board(410), 91, "410 needs 91 more to beat the lowest entry (500)")
+
+
+func test_gap_to_board_tie_does_not_rank():
+	var board := Leaderboard.new(Tuning.new())
+	for score in [900, 800, 700, 600, 500]:
+		board.submit(score, "🐼")
+	assert_eq(board.gap_to_board(500), 1, "a tie with the lowest entry still needs 1 more point")
+
+
+func test_gap_to_board_already_ranks_returns_zero():
+	var board := Leaderboard.new(Tuning.new())
+	for score in [900, 800, 700, 600, 500]:
+		board.submit(score, "🐼")
+	assert_eq(board.gap_to_board(950), 0, "a score that already ranks needs 0 more")
+
+
+func test_gap_to_board_with_empty_slot():
+	var tuning := Tuning.new()
+	var board := Leaderboard.new(tuning)
+	board.submit(100, "🐼")
+	board.submit(90, "🐼")
+	board.submit(80, "🐼")
+	assert_eq(board.gap_to_board(0), 1, "an empty slot still needs a positive score")
+	assert_eq(board.gap_to_board(10), 0, "any positive score ranks while a slot is empty")
+
+
+func test_gap_to_board_on_empty_board():
+	var board := Leaderboard.new(Tuning.new())
+	assert_eq(board.gap_to_board(0), 1, "an empty board still needs a positive score")

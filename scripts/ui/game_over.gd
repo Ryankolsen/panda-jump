@@ -9,8 +9,10 @@ extends CanvasLayer
 ## stop, which is what makes the freeze work.
 ##
 ## Laid out as two columns between a title and a restart prompt (#26): the
-## left column is this run's score and (when it ranks #1) a "New best!"
-## badge; the right column is the in-memory Leaderboard, always rendered
+## left column is this run's score and either a "New best!" badge (rank
+## #1) or, when the run missed the board entirely (rank -1), the best
+## score on record and how many points it needed to make the board (#28);
+## the right column is the in-memory Leaderboard, always rendered
 ## as leaderboard.size() rows, blank slots and all. The board row matching
 ## this run's returned rank, and the badge, are picked out in gold; nothing
 ## here persists it to disk — a reload (restarting, see #10) drops it,
@@ -29,6 +31,8 @@ const NORMAL_COLOR := Color(1, 1, 1, 1)
 @onready var _run_header_label: Label = $Margin/VBox/Columns/Left/RunHeader
 @onready var _run_score_label: Label = $Margin/VBox/Columns/Left/RunScore
 @onready var _run_badge_label: Label = $Margin/VBox/Columns/Left/RunBadge
+@onready var _run_best_label: Label = $Margin/VBox/Columns/Left/RunBest
+@onready var _run_gap_label: Label = $Margin/VBox/Columns/Left/RunGap
 @onready var _board_header_label: Label = $Margin/VBox/Columns/Right/BoardHeader
 @onready var _board_grid: GridContainer = $Margin/VBox/Columns/Right/Board
 @onready var _input_delay_timer: Timer = $InputDelayTimer
@@ -46,11 +50,19 @@ func _ready() -> void:
 ## without a scene tree: the column header, the final score (grouped via
 ## NumberFormat), and the "New best!" badge — shown only when `rank` is 1,
 ## blank otherwise (a rank of -1 means the run didn't make the board at
-## all, which also reads as blank here; dedicated missed-board copy is a
-## later slice, #28).
+## all, which also reads as blank here; a run that missed the board
+## instead gets missed_lines() below, shown separately).
 static func run_lines(score: int, rank: int) -> Array[String]:
 	var badge := "New best!" if rank == 1 else ""
 	return ["This run", NumberFormat.thousands(score), badge]
+
+
+## Copy for a run that missed the board (rank == -1): the best score on
+## record and how many more points this run needed to rank — see
+## Leaderboard.gap_to_board(). Static and pure so it's testable without a
+## scene tree.
+static func missed_lines(best: int, gap: int) -> Array[String]:
+	return ["Best: " + NumberFormat.thousands(best), NumberFormat.thousands(gap) + " to make the board"]
 
 
 ## The leaderboard column's rows, one `[rank, emoji, score]` array of
@@ -85,6 +97,14 @@ func show_game_over(score: int, leaderboard: Leaderboard, rank: int, input_delay
 	_run_score_label.text = run_lines[1]
 	_run_badge_label.text = run_lines[2]
 	_run_badge_label.add_theme_color_override("font_color", HIGHLIGHT_COLOR)
+
+	var missed := rank == -1
+	_run_best_label.visible = missed
+	_run_gap_label.visible = missed
+	if missed:
+		var missed_lines: Array[String] = GameOver.missed_lines(leaderboard.best(), leaderboard.gap_to_board(score))
+		_run_best_label.text = missed_lines[0]
+		_run_gap_label.text = missed_lines[1]
 
 	_board_header_label.text = "Top Scores"
 	_rebuild_board(leaderboard, rank)

@@ -55,6 +55,20 @@ func best() -> int:
 	return _entries[0]["score"]
 
 
+## Points `score` still needs to rank on the board. If a slot is empty,
+## the threshold to rank is 1 (any positive score ranks; 0 never does). If
+## the board is full, the threshold is one more than the lowest entry's
+## score, since a tie goes below an existing entry rather than ranking
+## (see submit()). Returns 0 when `score` already meets the threshold.
+func gap_to_board(score: int) -> int:
+	var threshold: int
+	if _entries.size() < _size:
+		threshold = 1
+	else:
+		threshold = _entries[_entries.size() - 1]["score"] + 1
+	return maxi(threshold - score, 0)
+
+
 ## The board's configured capacity (tuning.leaderboard_size), so callers
 ## building a fixed number of display rows — see GameOver.board_rows —
 ## don't need a second reference to the Tuning this board was built from.
